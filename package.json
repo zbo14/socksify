@@ -8,7 +8,7 @@
     "url": "https://github.com/zbo14/socksify"
   },
   "scripts": {
-    "doc": "jsodc -r lib README.md && open out/index.html",
+    "doc": "jsdoc -r lib README.md && open out/index.html",
     "test": "nyc mocha --recursive --exit"
   },
   "author": "Zachary Balder",
