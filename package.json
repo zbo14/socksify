@@ -1,0 +1,40 @@
+{
+  "name": "socksify",
+  "description": "Adding SOCKS4(a) support to net/tls core module functionality",
+  "version": "1.0.0",
+  "main": "lib/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zbo14/socksify"
+  },
+  "scripts": {
+    "doc": "jsodc -r lib README.md && open out/index.html",
+    "test": "nyc mocha --recursive --exit"
+  },
+  "author": "Zachary Balder",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "6.1.0",
+    "eslint-config-standard": "13.0.1",
+    "eslint-plugin-import": "2.18.2",
+    "eslint-plugin-node": "9.1.0",
+    "eslint-plugin-promise": "4.2.1",
+    "eslint-plugin-standard": "4.0.0",
+    "jsdoc": "3.6.3",
+    "lolex": "4.2.0",
+    "mocha": "6.2.0",
+    "nyc": "14.1.1"
+  },
+  "nyc": {
+    "check-coverage": true,
+    "per-file": true,
+    "lines": 100,
+    "statements": 100,
+    "functions": 100,
+    "branches": 100,
+    "reporter": [
+      "html",
+      "text"
+    ]
+  }
+}
