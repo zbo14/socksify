@@ -1,8 +1,4 @@
 {
   "extends": "standard",
-  "root": true,
-  "rules": {
-    "no-async-promise-executor": "off",
-    "no-prototype-builtins": "off"
-    }
+  "root": true
 }

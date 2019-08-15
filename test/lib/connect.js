@@ -18,23 +18,23 @@ const testSuite = secure => {
   describe(secure ? 'tls' : 'net', () => {
     beforeEach(done => {
       this.clock = lolex.install()
-      this.server = net.createServer()
-      this.server.listen(proxyPort, proxyHost, done)
+      this.proxy = net.createServer()
+      this.proxy.listen(proxyPort, proxyHost, done)
     })
 
     afterEach(() => {
-      this.server.close()
+      this.proxy.close()
       this.clock.uninstall()
     })
 
     it('mocks connection without using proxy', async () => {
-      const promise = once(this.server, 'connection')
+      const promise = once(this.proxy, 'connection')
       await connect({ host: proxyHost, port: proxyPort, secure })
       await promise
     })
 
-    it('times out when server doesn\'t complete handshake', async () => {
-      this.server.once('connection', sock => {
+    it('times out when proxy doesn\'t complete handshake', async () => {
+      this.proxy.once('connection', sock => {
         sock.write(Buffer.from([0]))
         this.clock.tick(5e3)
       })
@@ -47,9 +47,9 @@ const testSuite = secure => {
       }
     })
 
-    it('mocks successful SOCKS4 handshake where server sends 1 byte at a time', async () => {
-      const promise = new Promise(async (resolve, reject) => {
-        const [sock] = await once(this.server, 'connection')
+    it('mocks successful SOCKS4 handshake where proxy sends 1 byte at a time', async () => {
+      const promise = (async () => {
+        const [sock] = await once(this.proxy, 'connection')
         sock.write(Buffer.from([0, 0x5a]))
         let data = Buffer.alloc(0)
 
@@ -58,20 +58,14 @@ const testSuite = secure => {
           data = Buffer.concat([data, chunk])
         }
 
-        try {
-          assert.deepStrictEqual(data, Buffer.from([
-            4,
-            1,
-            4, 210,
-            1, 2, 3, 4,
-            0
-          ]))
-
-          resolve()
-        } catch (err) {
-          reject(err)
-        }
-      })
+        assert.deepStrictEqual(data, Buffer.from([
+          4,
+          1,
+          4, 210,
+          1, 2, 3, 4,
+          0
+        ]))
+      })()
 
       const [result] = await Promise.all([
         connect({ host, port, proxyHost, proxyPort, secure }),
@@ -88,8 +82,8 @@ const testSuite = secure => {
       const portBuf = Buffer.alloc(2)
       portBuf.writeUInt16BE(port)
 
-      const promise = new Promise(async (resolve, reject) => {
-        const [sock] = await once(this.server, 'connection')
+      const promise = (async () => {
+        const [sock] = await once(this.proxy, 'connection')
         sock.write(Buffer.from([0, 0x5a]))
         let data = Buffer.alloc(0)
 
@@ -98,22 +92,16 @@ const testSuite = secure => {
           data = Buffer.concat([data, chunk])
         }
 
-        try {
-          assert.deepStrictEqual(data, Buffer.from([
-            4,
-            1,
-            ...portBuf,
-            0, 0, 0, 1,
-            0,
-            ...Buffer.from('foobar.com'),
-            0
-          ]))
-
-          resolve()
-        } catch (err) {
-          reject(err)
-        }
-      })
+        assert.deepStrictEqual(data, Buffer.from([
+          4,
+          1,
+          ...portBuf,
+          0, 0, 0, 1,
+          0,
+          ...Buffer.from('foobar.com'),
+          0
+        ]))
+      })()
 
       const [result] = await Promise.all([
         connect({ host, port, proxyHost, proxyPort }),
@@ -124,7 +112,7 @@ const testSuite = secure => {
     })
 
     it('mocks protocol violation', async () => {
-      this.server.once('connection', sock => sock.write(Buffer.from([1])))
+      this.proxy.once('connection', sock => sock.write(Buffer.from([1])))
 
       try {
         await connect({ host, port, proxyHost, proxyPort, secure })
@@ -135,7 +123,7 @@ const testSuite = secure => {
     })
 
     it('mocks general request failure', async () => {
-      this.server.once('connection', sock => sock.write(Buffer.from([0, 0x5b])))
+      this.proxy.once('connection', sock => sock.write(Buffer.from([0, 0x5b])))
 
       try {
         await connect({ host, port, proxyHost, proxyPort, secure })
