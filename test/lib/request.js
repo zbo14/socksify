@@ -5,6 +5,7 @@ const { once } = require('events')
 const fs = require('fs')
 const http = require('http')
 const https = require('https')
+const lolex = require('lolex')
 const net = require('net')
 const path = require('path')
 const request = require('../../lib/request')
@@ -25,6 +26,7 @@ const testSuite = secure => {
 
   describe(proto, () => {
     beforeEach(async () => {
+      this.clock = lolex.install()
       this.proxy = net.createServer()
       this.server = createServer(opts)
 
@@ -35,6 +37,7 @@ const testSuite = secure => {
     })
 
     afterEach(() => {
+      this.clock.uninstall()
       this.proxy.close()
       this.server.close()
     })
@@ -120,6 +123,51 @@ const testSuite = secure => {
 
       assert.strictEqual(code, 200)
       assert.strictEqual(body, 'foobaz')
+    })
+
+    it('times out on connect', async () => {
+      const promise = request(proto + '://127.0.0.1:' + port, { proxyHost, proxyPort })
+      await once(this.proxy, 'connection')
+
+      this.clock.tick(5e3)
+
+      try {
+        await promise
+        assert.fail('Should reject')
+      } catch ({ message }) {
+        assert.strictEqual(message, 'Connect timeout')
+      }
+    })
+
+    it('proxies a request but times out when it doesn\'t get a response', async () => {
+      this.server.once('request', () => this.clock.tick(5e3))
+
+      const promise = request(proto + '://127.0.0.1:' + port, { proxyHost, proxyPort })
+      const [sock1] = await once(this.proxy, 'connection')
+
+      const buf = Buffer.alloc(2)
+      buf.writeUInt16BE(port)
+
+      let data = Buffer.alloc(0)
+
+      while (data.byteLength < 9) {
+        const [chunk] = await once(sock1, 'data')
+        data = Buffer.concat([data, chunk])
+      }
+
+      assert.deepStrictEqual(data, Buffer.from([4, 1, ...buf, 127, 0, 0, 1, 0]))
+
+      const sock2 = net.connect(port, host, () => {
+        sock1.write(Buffer.from([0, 0x5a, 0, 0, 0, 0, 0, 0]))
+        sock1.pipe(sock2).pipe(sock1)
+      })
+
+      try {
+        await promise
+        assert.fail('Should reject')
+      } catch ({ message }) {
+        assert.strictEqual(message, 'Request timeout')
+      }
     })
   })
 }

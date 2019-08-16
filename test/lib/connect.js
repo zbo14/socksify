@@ -43,7 +43,7 @@ const testSuite = secure => {
         await connect({ host, port, proxyHost, proxyPort, secure })
         assert.fail('Should reject')
       } catch ({ message }) {
-        assert.strictEqual(message, 'Request timeout')
+        assert.strictEqual(message, 'Connect timeout')
       }
     })
 

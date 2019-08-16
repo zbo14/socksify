@@ -16,11 +16,12 @@ Clone the repo, `nvm i`, and `npm i`.
  * Resolves a net.Socket or tls.TLSSocket.
  *
  * @param  {Object}  opts
- * @param  {String}  opts.host        - the destination hostname
- * @param  {Number}  opts.port        - the destination port
- * @param  {String}  [opts.proxyHost] - the proxy hostname
- * @param  {Number}  [opts.proxyPort] - the proxy port
- * @param  {Boolean} [opts.secure]    - whether to establish TLS connection from proxy to destination
+ * @param  {String}  opts.host            - the destination hostname
+ * @param  {Number}  opts.port            - the destination port
+ * @param  {String}  [opts.proxyHost]     - the proxy hostname
+ * @param  {Number}  [opts.proxyPort]     - the proxy port
+ * @param  {Boolean} [opts.secure]        - whether to establish TLS connection from proxy to destination
+ * @param  {Number}  [opts.timeout = 5e3] - timeout to connect to destination/proxy
  *
  * @return {Promise}
  */
@@ -36,15 +37,18 @@ const connect = opts => {
  * Adds SOCKS4(a) proxying support to http.request() and https.request().
  * Resolves an object with the response status code, headers, and body.
  *
- * @param  {(String|URL)} url              - the destination URL
+ * @param  {(String|URL)} url                         - the destination URL
  * @param  {Object}       [opts = {}]
- * @param  {String}       [opts.body]      - the request body
- * @param  {String}       [opts.proxyHost] - the proxy hostname
- * @param  {Number}       [opts.proxyPort] - the proxy port
- * @param  {}             [opts....]       - additional options for http.request() or https.request()
+ * @param  {String}       [opts.body]                 - the request body
+ * @param  {Number}       [opts.connectTimeout]       - timeout for socksify.connect()
+ * @param  {String}       [opts.proxyHost]            - the proxy hostname
+ * @param  {Number}       [opts.proxyPort]            - the proxy port
+ * @param  {Number}       [opts.requestTimeout = 5e3] - timeout for the HTTP(S) request
+ * @param  {}             [opts....]                  - additional options for http.request() or https.request()
  *
  * @return {Promise}
  */
+
 const request = async (url, opts = {}) => {
   ...
 }
